@@ -18,13 +18,16 @@ public:
 	static const int MAIN_MENU = 1;
 	static const int GAME_OVER = 2;
 
+	static const int COLLISION_TIME = 250;
+	static const int FALL_WAIT = 300;
+
 	Game(sf::RenderWindow *window);
 	void draw();
 	void update();
 	void handleEvents(sf::Event event);
 private:
 	sf::RenderWindow *window;
-	sf::Clock clock, collisionClock;
+	sf::Clock clock, collisionClock, playTimeClock;
 	sf::Font font;
 	std::vector<Block> board;
 	bool left, right, rotate, shouldFall;

@@ -4,7 +4,7 @@ Game::Game(sf::RenderWindow *window) {
 	this->window = window;
 	srand(time(0));
 	fallWait = 350;
-	gameState = MAIN_MENU;
+	gameState = IN_GAME; // default = MAIN_MENU
 	initGame();
 
 	if(!font.loadFromFile("Squared.ttf")) {
@@ -19,12 +19,14 @@ void Game::initGame() {
 	right = false;
 	rotate = false;
 	shouldFall = true;
+	playTimeClock.restart();
 	generateCurrentPiece();
 }
 
 void Game::draw() {
 	if(gameState == GAME_OVER) {
 		drawText("Game Over", 35, 70, 75);
+		
 	}
 	if(gameState == MAIN_MENU) {
 		drawText("Tetris", 25, 70, 110);
@@ -47,7 +49,6 @@ void Game::update() {
 	if(gameState == IN_GAME) {
 		if(left || right) {
 			currentPiece.shiftX(shift * Block::SIZE);
-			collisionClock.restart();
 			left = false;
 			right = false;
 		}
@@ -60,9 +61,10 @@ void Game::update() {
 		checkForFullLines();
 		handleCollisions();
 
-		if(clock.getElapsedTime().asMilliseconds() > fallWait) {
+		if(clock.getElapsedTime().asMilliseconds() > FALL_WAIT) {
 			if(shouldFall){
 				currentPiece.shiftY(Block::SIZE);
+				collisionClock.restart();
 			}
 			clock.restart();
 		}
@@ -94,42 +96,51 @@ void Game::checkForFullLines(){
 
 void Game::handleCollisions(){
 	for(int i = 0; i < currentPiece.getBlocks().size(); i++) {
-		Block b = currentPiece.getBlocks().at(i);
+		Block cb = currentPiece.getBlocks().at(i);
 
-		if(b.getX() < 0) currentPiece.shiftX(Block::SIZE);
-		if(b.getX() + Block::SIZE > WIDTH) currentPiece.shiftX(-Block::SIZE);		
+		if(cb.getX() < 0) currentPiece.shiftX(Block::SIZE);
+		if(cb.getX() + Block::SIZE > WIDTH) currentPiece.shiftX(-Block::SIZE);		
 
-		if(b.getY() + Block::SIZE >= HEIGHT) {
+		if(cb.getY() + Block::SIZE >= HEIGHT) {
 			lockInCurrentPiece();
 			break;
 		}
 
 		for(int j = 0; j < board.size(); j++) {
-			Block b2 = board.at(j);
+			Block b = board.at(j);
 
-			if(b2.getIsFilled() && b.isCollided(b2)) {
-				rotate = false;
-				if(shift == 0) {
-					if(b.getY() <= 0) {
+			if(b.getIsFilled()) {
+				if(cb.getX() == b.getX() && cb.getY() + Block::SIZE == b.getY()) {
+					shouldFall = false;
+
+					lockInCurrentPiece();
+
+					if(cb.getY() <= 0) {
 						gameState = GAME_OVER;
 						initGame();
 						return;
 					}
-					lockInCurrentPiece();
 				}
-				currentPiece.shiftX(-shift * Block::SIZE);
-				break;
+
+				if(cb.getY() == b.getY() && cb.getX() == b.getX()) {
+					currentPiece.shiftX(-shift * Block::SIZE);
+					break;
+				}
 			}
+			shouldFall = true;
 		}
 	}
 }
 
 void Game::lockInCurrentPiece(){
+	if(collisionClock.getElapsedTime().asMilliseconds() < COLLISION_TIME) return;
+
 	shouldFall = false;
 	for(int i = 0; i < currentPiece.getBlocks().size(); i++) {
 		board.push_back(currentPiece.getBlocks().at(i));
 	}
 	generateCurrentPiece();
+	collisionClock.restart();
 	shouldFall = true;
 }
 
@@ -151,7 +162,7 @@ void Game::handleEvents(sf::Event event) {
 				rotate = true;
 			}
 			if(event.key.code == sf::Keyboard::Down) {
-				fallWait = 100;
+				fallWait = 200;
 			}
 			break;
 		case sf::Event::KeyReleased:

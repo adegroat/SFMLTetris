@@ -17,8 +17,6 @@ public:
 	Block(int startX, int startY, bool isFilled, const sf::Color& color);
 	void setFilled(bool isFilled);
 	bool getIsFilled() const;
-	bool isCollided(const Block& block) const;
-	bool isCollidedX(const Block& block) const;
 	int getX() const;
 	int getY() const;
 	void setX(int newX);

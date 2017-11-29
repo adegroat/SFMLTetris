@@ -61,10 +61,6 @@ void Block::draw(sf::RenderWindow& window) {
 	window.draw(shape);
 }
 
-bool Block::isCollided(const Block& block) const {
-	return x + SIZE > block.getX() && x < block.getX() + SIZE && y + SIZE >= block.getY() && y <= block.getY() + SIZE;
-}
-
 bool Block::isEqual(const Block& block) const {
 	return x == block.getX() && y == block.getY() && isFilled == block.getIsFilled();
 }
