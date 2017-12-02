@@ -4,15 +4,14 @@ Game::Game(sf::RenderWindow *window) {
 	this->window = window;
 	srand(time(0));
 	fallWait = 350;
-	gameState = IN_GAME; // default = MAIN_MENU
-	initGame();
-
+	playTimeStr = "0";
 	if(!font.loadFromFile("Squared.ttf")) {
 		std::cerr << "Error loading font!" << std::endl;
 	}
+	newGame();
 }
 
-void Game::initGame() {
+void Game::newGame() {
 	board.clear();
 	shift = 0;
 	left = false;
@@ -21,13 +20,23 @@ void Game::initGame() {
 	shouldFall = true;
 	playTimeClock.restart();
 	generateCurrentPiece();
+	gameState = IN_GAME;
+}
+
+void Game::gameOver() {
+	gameState = GAME_OVER;
+	int playTime = static_cast<int>(playTimeClock.getElapsedTime().asSeconds());
+	std::stringstream ss;
+	ss << std::setw(4) << std::setfill('0') << playTime;
+	playTimeStr = ss.str() + " sec";
 }
 
 void Game::draw() {
 	if(gameState == GAME_OVER) {
 		drawText("Game Over", 35, 70, 75);
-		
+		drawText("Time played: " + sf::String(playTimeStr), 60, 200, 30);
 	}
+
 	if(gameState == MAIN_MENU) {
 		drawText("Tetris", 25, 70, 110);
 	}
@@ -40,8 +49,8 @@ void Game::draw() {
 	}
 	
 	if (gameState != IN_GAME) {
-		drawText("Press \"Enter\" to play", 65, 270);
-		drawText("Press \"q\" to quit", 110, 350);
+		drawText("Press \"Enter\" to play", 65, 300);
+		drawText("Press \"q\" to quit", 110, 380);
 	}
 }
 
@@ -52,15 +61,16 @@ void Game::update() {
 			left = false;
 			right = false;
 		}
-		
+				
 		if(rotate) {
 			currentPiece.rotate();
 			rotate = false;
 		}
 
-		checkForFullLines();
 		handleCollisions();
+		checkForFullLines();
 
+		// Shift piece down after FALL_WAIT ms
 		if(clock.getElapsedTime().asMilliseconds() > FALL_WAIT) {
 			if(shouldFall){
 				currentPiece.shiftY(Block::SIZE);
@@ -75,10 +85,12 @@ void Game::checkForFullLines(){
 	for(int y = 0; y < HEIGHT; y += Block::SIZE) {
 		std::vector<int> toBeDeletedIndex;
 
+		// Loop through each possible y and store location of blocks with same y val
 		for(int i = 0; i < board.size(); i++) {
 			if(board.at(i).getY() == y) toBeDeletedIndex.push_back(i);
 		}
 
+		// Check if there is a full line
 		if(toBeDeletedIndex.size() * Block::SIZE == WIDTH) {
 			for(int i = 0; i < toBeDeletedIndex.size(); i++) {
 				board.at(toBeDeletedIndex.at(i)) = Block();
@@ -98,10 +110,13 @@ void Game::handleCollisions(){
 	for(int i = 0; i < currentPiece.getBlocks().size(); i++) {
 		Block cb = currentPiece.getBlocks().at(i);
 
+		// Prevent leaving the screen
 		if(cb.getX() < 0) currentPiece.shiftX(Block::SIZE);
 		if(cb.getX() + Block::SIZE > WIDTH) currentPiece.shiftX(-Block::SIZE);		
 
-		if(cb.getY() + Block::SIZE >= HEIGHT) {
+		// Lock in piece if it touches the ground
+		bool blockOnGround = cb.getY() + Block::SIZE == HEIGHT;
+		if(blockOnGround) {
 			lockInCurrentPiece();
 			break;
 		}
@@ -110,24 +125,22 @@ void Game::handleCollisions(){
 			Block b = board.at(j);
 
 			if(b.getIsFilled()) {
-				if(cb.getX() == b.getX() && cb.getY() + Block::SIZE == b.getY()) {
+				if(cb.getX() == b.getX() && (cb.getY() + Block::SIZE == b.getY() || blockOnGround)) {
 					shouldFall = false;
 
 					lockInCurrentPiece();
 
 					if(cb.getY() <= 0) {
-						gameState = GAME_OVER;
-						initGame();
+						gameOver();
 						return;
 					}
-				}
+				} else shouldFall = true;
 
 				if(cb.getY() == b.getY() && cb.getX() == b.getX()) {
 					currentPiece.shiftX(-shift * Block::SIZE);
 					break;
 				}
 			}
-			shouldFall = true;
 		}
 	}
 }
@@ -151,18 +164,15 @@ void Game::handleEvents(sf::Event event) {
 			break;
 		case sf::Event::KeyPressed:
 			if(event.key.code == sf::Keyboard::Left) {
-				shift = -1;
 				left = true;
+				shift = -1;
 			}
 			if(event.key.code == sf::Keyboard::Right) {
-				shift = 1;
 				right = true;
+				shift = 1;
 			}
 			if(event.key.code == sf::Keyboard::Up) { 
 				rotate = true;
-			}
-			if(event.key.code == sf::Keyboard::Down) {
-				fallWait = 200;
 			}
 			break;
 		case sf::Event::KeyReleased:
@@ -177,11 +187,9 @@ void Game::handleEvents(sf::Event event) {
 			if(event.key.code == sf::Keyboard::Up) {
 				rotate = false;
 			}
-			if(event.key.code == sf::Keyboard::Down) {
-				fallWait = 350;
-			}
+			// Menu options
 			if(event.key.code == sf::Keyboard::Return && gameState != IN_GAME) {
-				gameState = IN_GAME;
+				newGame();
 			}
 			if(event.key.code == sf::Keyboard::Q && gameState != IN_GAME) {
 				window->close();

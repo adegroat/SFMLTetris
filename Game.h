@@ -5,6 +5,8 @@
 #include <SFML/Graphics.hpp>
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 #include "Block.h"
 #include "Piece.h"
@@ -33,13 +35,15 @@ private:
 	bool left, right, rotate, shouldFall;
 	int fallWait, shift, gameState;
 	Piece currentPiece;
+	std::string playTimeStr;
 
 	void checkForFullLines();
 	void handleCollisions();
 	void generateCurrentPiece();
 	void lockInCurrentPiece();
 	void drawText(const sf::String& text, int x, int y, int size = 30);
-	void initGame();
+	void newGame();
+	void gameOver();
 };
 
 #endif
