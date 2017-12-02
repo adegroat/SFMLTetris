@@ -9,6 +9,7 @@ Game::Game(sf::RenderWindow *window) {
 		std::cerr << "Error loading font!" << std::endl;
 	}
 	newGame();
+	gameState = MAIN_MENU;
 }
 
 void Game::newGame() {
@@ -33,12 +34,15 @@ void Game::gameOver() {
 
 void Game::draw() {
 	if(gameState == GAME_OVER) {
-		drawText("Game Over", 35, 70, 75);
-		drawText("Time played: " + sf::String(playTimeStr), 60, 200, 30);
+		drawText("Game Over", 35, 50, 75);
+		drawText("Time played: " + sf::String(playTimeStr), 60, 230, 30);
 	}
 
 	if(gameState == MAIN_MENU) {
-		drawText("Tetris", 25, 70, 110);
+		drawText("Tetris", 25, 50, 110);
+
+		drawText("Controls:", 175, 210, 25);
+		drawText("Left and right to move. Up to rotate.", 45, 250, 20);
 	}
 
 	if(gameState == IN_GAME) {
@@ -49,8 +53,8 @@ void Game::draw() {
 	}
 	
 	if (gameState != IN_GAME) {
-		drawText("Press \"Enter\" to play", 65, 300);
-		drawText("Press \"q\" to quit", 110, 380);
+		drawText("Press \"Enter\" to play", 65, 350);
+		drawText("Press \"q\" to quit", 110, 430);
 	}
 }
 
@@ -61,7 +65,7 @@ void Game::update() {
 			left = false;
 			right = false;
 		}
-				
+
 		if(rotate) {
 			currentPiece.rotate();
 			rotate = false;
@@ -106,7 +110,7 @@ void Game::checkForFullLines(){
 	}
 }
 
-void Game::handleCollisions(){
+void Game::handleCollisions() {
 	for(int i = 0; i < currentPiece.getBlocks().size(); i++) {
 		Block cb = currentPiece.getBlocks().at(i);
 
@@ -115,8 +119,7 @@ void Game::handleCollisions(){
 		if(cb.getX() + Block::SIZE > WIDTH) currentPiece.shiftX(-Block::SIZE);		
 
 		// Lock in piece if it touches the ground
-		bool blockOnGround = cb.getY() + Block::SIZE == HEIGHT;
-		if(blockOnGround) {
+		if(cb.getY() + Block::SIZE == HEIGHT) {
 			lockInCurrentPiece();
 			break;
 		}
@@ -125,9 +128,8 @@ void Game::handleCollisions(){
 			Block b = board.at(j);
 
 			if(b.getIsFilled()) {
-				if(cb.getX() == b.getX() && (cb.getY() + Block::SIZE == b.getY() || blockOnGround)) {
+				if(cb.getX() == b.getX() && cb.getY() + Block::SIZE == b.getY()) {
 					shouldFall = false;
-
 					lockInCurrentPiece();
 
 					if(cb.getY() <= 0) {
@@ -145,7 +147,7 @@ void Game::handleCollisions(){
 	}
 }
 
-void Game::lockInCurrentPiece(){
+void Game::lockInCurrentPiece() {
 	if(collisionClock.getElapsedTime().asMilliseconds() < COLLISION_TIME) return;
 
 	shouldFall = false;
