@@ -53,7 +53,7 @@ void Game::draw() {
 	}
 	
 	if (gameState != IN_GAME) {
-		drawText("Press \"Enter\" to play", 65, 350);
+		drawText("Press \"P\" to play", 110, 350);
 		drawText("Press \"q\" to quit", 110, 430);
 	}
 }
@@ -190,7 +190,7 @@ void Game::handleEvents(sf::Event event) {
 				rotate = false;
 			}
 			// Menu options
-			if(event.key.code == sf::Keyboard::Return && gameState != IN_GAME) {
+			if(event.key.code == sf::Keyboard::P && gameState != IN_GAME) {
 				newGame();
 			}
 			if(event.key.code == sf::Keyboard::Q && gameState != IN_GAME) {
@@ -203,7 +203,7 @@ void Game::handleEvents(sf::Event event) {
 void Game::generateCurrentPiece(){
 	int randType = rand() % Piece::NUM_TYPES;
 	currentPiece.createPiece(randType);
-	currentPiece.shiftX(4 * Block::SIZE);
+	currentPiece.shiftX(5 * Block::SIZE);
 }
 
 void Game::drawText(const sf::String& text, int x, int y, int size) {
